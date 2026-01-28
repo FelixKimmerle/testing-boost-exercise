@@ -1,3 +1,4 @@
 !flake.nix
 !flake.lock
 build/
+compile_commands.json

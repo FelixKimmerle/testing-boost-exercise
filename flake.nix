@@ -19,6 +19,7 @@
         default = pkgs.mkShell {
           packages = [
             # toolchain
+            pkgs.clang-tools
             pkgs.clang
             pkgs.lld
             pkgs.cmake
@@ -28,6 +29,7 @@
             # libs
             pkgs.eigen
             pkgs.yaml-cpp
+            pkgs.boost
           ];
 
           shellHook = ''
