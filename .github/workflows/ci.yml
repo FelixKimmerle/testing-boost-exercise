@@ -1,0 +1,88 @@
+name: SSE CI/CD
+on:  [push]
+jobs:
+  style_check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install clang-format
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            clang-format
+
+      - name: Run clang-format in check mode
+        run: |
+          clang-format --dry-run --Werror tests/*.cpp src/*.cpp src/*.hpp
+
+
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            cmake \
+            g++ \
+            clang-format \
+            libeigen3-dev \
+            libyaml-cpp-dev \
+            libboost-dev \
+            libboost-test-dev
+
+      - name: Create build directory
+        run: mkdir build
+
+      - name: Configure cmake
+        run: cmake ..
+        working-directory: build
+
+      - name: Compile using make
+        run: make -j
+        working-directory: build
+
+      - name: Compress build dir
+        run: tar -cvf build.tar build/
+
+      - name: Upload compressed build dir
+        uses: actions/upload-artifact@v4
+        with:
+          name: build
+          path: build.tar
+
+  test:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libeigen3-dev \
+            libyaml-cpp-dev \
+            libboost-dev \
+            libboost-test-dev
+
+      - name: Download compressed build dir
+        uses: actions/download-artifact@v6
+        with:
+          name: build
+
+      - name: Decompress build dir
+        run: tar -xvf build.tar
+
+      - name: Run the tests
+        working-directory: build
+        run: ctest --output-on-failure
